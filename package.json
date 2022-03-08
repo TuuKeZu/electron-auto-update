@@ -1,6 +1,6 @@
 {
   "name": "electron-updater-example",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "main": "main.js",
   "description": "electron-updater example project",
   "author": {
@@ -10,16 +10,16 @@
   },
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder -l",
+    "dist": "electron-builder -w",
     "serve": "http-server wwwroot/ -p 8080"
   },
   "dependencies": {
     "electron-log": "^4.3.0",
-    "electron-updater": "^4.3.5"
+    "electron-updater": "^4.6.5"
   },
   "devDependencies": {
-    "electron": "^10.1.5",
-    "electron-builder": "^22.9.1",
+    "electron": "^17.1.0",
+    "electron-builder": "^22.14.13",
     "http-server": "^0.12.3"
   },
   "build": {
@@ -29,28 +29,12 @@
         "url": "http://127.0.0.1:8080/"
       }
     ],
-    "appId": "com.github.martin.electronupdaterexample",
-    "mac": {
-      "category": "your.app.category.type",
-      "target": [
-        "zip",
-        "dmg"
-      ]
-    },
-    "linux": {
-      "category": "Utility",
-      "icon": "icons/icons",
-      "target": [
-        "AppImage",
-        "deb"
-      ]
-    },
     "win": {
       "target": "nsis",
       "verifyUpdateCodeSignature": false,
       "publisherName": "Some Company - Stored in cert file",
-      "certificateFile": "./certs/some_file.pfx",
-      "certificatePassword": "some_password"
+      "certificateFile": "./certs/test.pfx",
+      "certificatePassword": "pass"
     }
   }
 }

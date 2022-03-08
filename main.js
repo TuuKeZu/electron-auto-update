@@ -4,6 +4,7 @@
 const {app, BrowserWindow, Menu, protocol, ipcMain} = require('electron');
 const log = require('electron-log');
 const {autoUpdater} = require("electron-updater");
+const path = require('path');
 
 // Disable security warnings and set react app path on dev env
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = true;
@@ -16,6 +17,7 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = true;
 // This logging setup is not required for auto-updates to work,
 // but it sure makes debugging easier :)
 //-------------------------------------------------------------------
+
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 log.info('App starting...');
@@ -58,60 +60,75 @@ if (process.platform === 'darwin') {
 let win;
 
 function sendStatusToWindow(text) {
-  log.info(text);
-  win.webContents.send('message', text);
+    log.info(text);
+    win.webContents.send('message', text);
 }
+
 function createDefaultWindow() {
-  win = new BrowserWindow({
-    webPreferences: {
-      webSecurity: true,
-      nodeIntegration: true
-    },
-    width: 1280,
-    height: 720
-  });
-  win.webContents.openDevTools();
-  win.on('closed', () => {
-    win = null;
-  });
-  win.loadURL(`file://${__dirname}/version.html#v${app.getVersion()}`);
-  return win;
+    win = new BrowserWindow({
+        webPreferences: {
+            nodeIntegration: true,
+            preload: path.join(app.getAppPath(), 'preload.js')
+        },
+        width: 1280,
+        height: 720
+    });
+
+    win.webContents.openDevTools();
+
+    win.on('closed', () => {
+        win = null;
+    });
+
+    win.loadURL(`${__dirname}/version.html`);
+    win.webContents.send('version', app.getVersion());
+    sendStatusToWindow('Initalized Message Port!');
+    
+    return win;
 }
 autoUpdater.on('checking-for-update', () => {
-  sendStatusToWindow('Checking for update...');
+    log.info('Looking for updates...');
+    sendStatusToWindow('Checking for update...');
 })
 autoUpdater.on('update-available', (info) => {
-  sendStatusToWindow('Update available.');
+    log.info('Update found...');
+    log.info('info');
+    sendStatusToWindow('Update available.');
 })
 autoUpdater.on('update-not-available', (info) => {
-  sendStatusToWindow('Update not available.');
+    log.info(info);
+    sendStatusToWindow('Update not available.');
 })
 autoUpdater.on('error', (err) => {
-  sendStatusToWindow('Error in auto-updater. ' + err);
+    log.error(err);
+    sendStatusToWindow('Error in auto-updater. ' + err);
 })
+
 autoUpdater.on('download-progress', (progressObj) => {
-  let log_message = "Download speed: " + progressObj.bytesPerSecond;
-  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-  sendStatusToWindow(log_message);
+    let log_message = "Download speed: " + progressObj.bytesPerSecond;
+    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+    log.info(log_message);
+    sendStatusToWindow(log_message);
 })
 autoUpdater.on('update-downloaded', (ev, info) => {
   // Wait 5 seconds, then quit and install
   // In your application, you don't need to wait 5 seconds.
   // You could call autoUpdater.quitAndInstall(); immediately
-  sendStatusToWindow('Update downloaded');
-  
-  setTimeout(function() {
-    autoUpdater.quitAndInstall();  
-  }, 5000)
+  // sendStatusToWindow('Update downloaded');
+  log.info('Restarting...');
+
+  autoUpdater.quitAndInstall();  
 })
 app.on('ready', function() {
-  // Create the Menu
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+    // Create the Menu
 
-  createDefaultWindow();
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+
+    createDefaultWindow();
 });
+
 app.on('window-all-closed', () => {
   app.quit();
 });
