@@ -1,7 +1,7 @@
 // This is free and unencumbered software released into the public domain.
 // See LICENSE for details
 
-const {app, BrowserWindow, Menu, protocol, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain} = require('electron');
 const log = require('electron-log');
 const {autoUpdater} = require("electron-updater");
 const path = require('path');
@@ -23,32 +23,6 @@ autoUpdater.logger.transports.file.level = 'info';
 log.info('App starting...');
 
 //-------------------------------------------------------------------
-// Define the menu
-//
-// THIS SECTION IS NOT REQUIRED
-//-------------------------------------------------------------------
-let template = []
-if (process.platform === 'darwin') {
-  // OS X
-  const name = app.getName();
-  template.unshift({
-    label: name,
-    submenu: [
-      {
-        label: 'About ' + name,
-        role: 'about'
-      },
-      {
-        label: 'Quit',
-        accelerator: 'Command+Q',
-        click() { app.quit(); }
-      },
-    ]
-  })
-}
-
-
-//-------------------------------------------------------------------
 // Open a window that displays the version
 //
 // THIS SECTION IS NOT REQUIRED
@@ -57,52 +31,70 @@ if (process.platform === 'darwin') {
 // for the app to show a window than to have to click "About" to see
 // that updates are working.
 //-------------------------------------------------------------------
-let win;
+
+const WINDOWS = {};
 
 function sendStatusToWindow(text) {
     log.info(text);
     win.webContents.send('message', text);
 }
 
-function createDefaultWindow() {
-    win = new BrowserWindow({
+const createMainWindow = () => {
+
+    if(WINDOWS['MAIN'] != null){ return; }
+
+    const win = new BrowserWindow({
+        width: 1280,
+        height: 720,
         webPreferences: {
             nodeIntegration: true,
-            preload: path.join(app.getAppPath(), 'preload.js')
+            preload: path.join(app.getAppPath(), 'src', 'windows', 'main', 'preload.js')
         },
-        width: 1280,
-        height: 720
     });
+
+    WINDOWS['MAIN'] = win;
+
 
     win.webContents.openDevTools();
 
     win.on('closed', () => {
-        win = null;
+        WINDOWS['MAIN'] = null;
     });
 
-    win.loadURL(`${__dirname}/version.html`);
-    win.webContents.send('version', app.getVersion());
-    sendStatusToWindow('Initalized Message Port!');
-    
-    return win;
+    win.loadURL(path.join(app.getAppPath(), 'src', 'windows', 'main', 'index.html'));
+
+    // win.webContents.send('version', app.getVersion());
+    // sendStatusToWindow('Initalized Message Port!');
 }
+
+ipcMain.on('main:initialize', (event, args) => {
+    const data = {
+        version: app.getVersion()
+    }
+
+    event.returnValue = data;
+});
+
 autoUpdater.on('checking-for-update', () => {
     log.info('Looking for updates...');
     sendStatusToWindow('Checking for update...');
-})
+});
+
 autoUpdater.on('update-available', (info) => {
     log.info('Update found...');
     log.info('info');
     sendStatusToWindow('Update available.');
-})
+});
+
 autoUpdater.on('update-not-available', (info) => {
     log.info(info);
     sendStatusToWindow('Update not available.');
-})
+});
+
 autoUpdater.on('error', (err) => {
     log.error(err);
     sendStatusToWindow('Error in auto-updater. ' + err);
-})
+});
 
 autoUpdater.on('download-progress', (progressObj) => {
     let log_message = "Download speed: " + progressObj.bytesPerSecond;
@@ -110,23 +102,23 @@ autoUpdater.on('download-progress', (progressObj) => {
     log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
     log.info(log_message);
     sendStatusToWindow(log_message);
-})
+});
+
+
 autoUpdater.on('update-downloaded', (ev, info) => {
   // Wait 5 seconds, then quit and install
   // In your application, you don't need to wait 5 seconds.
   // You could call autoUpdater.quitAndInstall(); immediately
   // sendStatusToWindow('Update downloaded');
+
   log.info('Restarting...');
 
   autoUpdater.quitAndInstall();  
-})
+});
+
 app.on('ready', function() {
     // Create the Menu
-
-    const menu = Menu.buildFromTemplate(template);
-    Menu.setApplicationMenu(menu);
-
-    createDefaultWindow();
+    createMainWindow();
 });
 
 app.on('window-all-closed', () => {

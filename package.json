@@ -1,17 +1,16 @@
 {
   "name": "electron-updater-example",
-  "version": "0.1.4",
-  "main": "main.js",
+  "version": "0.1.6",
+  "main": "src\\main.js",
   "description": "electron-updater example project",
   "author": {
-    "name": "Martin Jakal",
+    "name": "Tuukka Moilanen",
     "email": "app@example.com",
     "url": "https://example.com/"
   },
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder -w",
-    "serve": "http-server wwwroot/ -p 8080"
+    "dist": "electron-builder -w"
   },
   "dependencies": {
     "electron-log": "^4.3.0",
@@ -19,14 +18,13 @@
   },
   "devDependencies": {
     "electron": "^17.1.0",
-    "electron-builder": "^22.14.13",
-    "http-server": "^0.12.3"
+    "electron-builder": "^22.14.13"
   },
   "build": {
     "publish": [
       {
         "provider": "generic",
-        "url": "http://127.0.0.1:8080/"
+        "url": "http://localhost/electron-auto-update/"
       }
     ],
     "win": {
